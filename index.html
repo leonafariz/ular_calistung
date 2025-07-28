@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calistung Snake Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --red: #FF3366;
+            --yellow: #FFCC33;
+            --green: #33CC99;
+            --blue: #3399FF;
+            --dark: #333333;
+        }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #FAFAFA;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .card {
+            border-radius: 24px;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+            border-radius: 16px;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .option-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        #game-canvas {
+            background-color: #f0f0f0;
+            border-radius: 16px;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            opacity: 0;
+        }
+        
+        .shape {
+            position: absolute;
+            z-index: -1;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, var(--red), var(--yellow), var(--green), var(--blue));
+        }
+    </style>
+</head>
+<body>
+    <!-- Decorative shapes -->
+    <div class="shape" style="top: 5%; left: 5%; width: 60px; height: 60px; background-color: var(--red); opacity: 0.1; border-radius: 24px; transform: rotate(15deg);"></div>
+    <div class="shape" style="top: 15%; right: 10%; width: 40px; height: 40px; background-color: var(--yellow); opacity: 0.1; border-radius: 50%;"></div>
+    <div class="shape" style="bottom: 10%; left: 15%; width: 80px; height: 80px; background-color: var(--green); opacity: 0.1; border-radius: 24px; transform: rotate(-20deg);"></div>
+    <div class="shape" style="bottom: 20%; right: 5%; width: 50px; height: 50px; background-color: var(--blue); opacity: 0.1; border-radius: 16px; transform: rotate(30deg);"></div>
+
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <!-- Game Container -->
+        <div class="card p-6 relative overflow-hidden">
+            <!-- Start Screen -->
+            <div id="start-screen">
+                <div class="flex justify-center mb-8">
+                    <div class="grid grid-cols-4 gap-3 w-full max-w-md">
+                        <div class="aspect-square flex items-center justify-center rounded-2xl" style="background-color: var(--red);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                        </div>
+                        <div class="aspect-square flex items-center justify-center rounded-2xl" style="background-color: var(--yellow);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                        </div>
+                        <div class="aspect-square flex items-center justify-center rounded-2xl" style="background-color: var(--green);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="aspect-square flex items-center justify-center rounded-2xl" style="background-color: var(--blue);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <h1 class="text-4xl font-bold text-center mb-2">Calistung Snake</h1>
+                <p class="text-center text-gray-500 mb-6">Belajar membaca, menulis, dan berhitung dengan game ular</p>
+                
+                <div class="bg-gray-50 rounded-xl p-4 mb-8">
+                    <h2 class="font-bold mb-2">Cara Bermain:</h2>
+                    <ul class="list-disc pl-5 space-y-1 text-sm text-gray-600">
+                        <li>Gunakan tombol panah untuk mengendalikan ular</li>
+                        <li>Makan makanan yang sesuai dengan jawaban yang benar</li>
+                        <li>Ular akan bertambah panjang jika jawaban benar</li>
+                        <li>Ular akan memendek jika jawaban salah</li>
+                        <li>Hindari menabrak dinding atau badan ular sendiri</li>
+                    </ul>
+                </div>
+                
+                <div class="flex justify-center">
+                    <button id="start-btn" class="btn px-10 py-3 text-white text-lg" style="background-color: var(--blue);">
+                        Mulai Main!
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Game Screen -->
+            <div id="game-screen" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center">
+                        <span id="question-type" class="inline-block px-3 py-1 rounded-full text-sm font-medium text-white" style="background-color: var(--red);">Membaca</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--yellow);" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span id="score" class="font-semibold">0</span>
+                    </div>
+                </div>
+                
+                <!-- Progress -->
+                <div class="flex items-center gap-3 mb-4">
+                    <span id="question-number" class="font-semibold">1</span>
+                    <div class="flex-1 bg-gray-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="progress-bar" style="width: 10%"></div>
+                    </div>
+                    <span>10</span>
+                </div>
+                
+                <div class="mb-4">
+                    <h2 id="question-text" class="text-lg font-bold mb-2">Pertanyaan akan muncul di sini</h2>
+                    
+                    <div id="question-image" class="flex justify-center mb-3 h-16"></div>
+                    
+                    <div id="options-container" class="grid grid-cols-2 gap-2 mb-2">
+                        <!-- Options will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="flex justify-center mb-4">
+                    <canvas id="game-canvas" width="400" height="400"></canvas>
+                </div>
+                
+                <div id="feedback" class="hidden rounded-xl p-3 mb-4 text-center font-medium"></div>
+                
+                <div class="flex justify-center">
+                    <button id="next-btn" class="hidden btn px-8 py-2 text-white" style="background-color: var(--green);">
+                        Lanjut →
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Result Screen -->
+            <div id="result-screen" class="hidden">
+                <div class="flex justify-center mb-6">
+                    <div id="result-emoji" class="text-6xl">🎉</div>
+                </div>
+                
+                <h2 class="text-3xl font-bold text-center mb-2">Selesai!</h2>
+                <p class="text-center text-gray-500 mb-6">Skor Akhir:</p>
+                
+                <div class="flex justify-center mb-8">
+                    <div id="final-score" class="text-5xl font-bold" style="color: var(--blue);">0/10</div>
+                </div>
+                
+                <div id="stars-container" class="flex justify-center mb-8">
+                    <!-- Stars will be added here -->
+                </div>
+                
+                <p id="result-message" class="text-center text-gray-500 mb-8">Pesan hasil akan muncul di sini</p>
+                
+                <div class="flex justify-center">
+                    <button id="restart-btn" class="btn px-10 py-3 text-white text-lg" style="background-color: var(--green);">
+                        Main Lagi!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game data
+        const questions = [
+            {
+                type: "membaca",
+                question: "Manakah kata yang benar untuk gambar ini?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="30" fill="#FFCC33"/>
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#FFCC33" stroke-width="2" stroke-dasharray="4"/>
+                          <path d="M50 10V0M50 100V90M10 50H0M100 50H90M85 85L78 78M15 15L22 22M85 15L78 22M15 85L22 78" stroke="#FFCC33" stroke-width="4" stroke-linecap="round"/>
+                        </svg>`,
+                options: ["Matahari", "Bulan", "Bintang", "Awan"],
+                answer: 0,
+                color: "#FF3366" // Red
+            },
+            {
+                type: "membaca",
+                question: "Manakah huruf yang hilang dari kata 'Ku_ing'?",
+                options: ["c", "s", "r", "t"],
+                answer: 0,
+                color: "#FF3366" // Red
+            },
+            {
+                type: "menulis",
+                question: "Manakah penulisan yang benar?",
+                options: ["Sepatu", "Sapatu", "Cepatu", "Spatu"],
+                answer: 0,
+                color: "#FFCC33" // Yellow
+            },
+            {
+                type: "menulis",
+                question: "Manakah penulisan yang benar untuk angka 7?",
+                options: ["Tujuh", "Tuju", "Tujoh", "Tuhju"],
+                answer: 0,
+                color: "#FFCC33" // Yellow
+            },
+            {
+                type: "berhitung",
+                question: "3 + 4 = ?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <text x="20" y="60" font-family="Outfit" font-size="30" font-weight="bold" fill="#33CC99">3 + 4 = ?</text>
+                        </svg>`,
+                options: ["5", "6", "7", "8"],
+                answer: 2,
+                color: "#33CC99" // Green
+            },
+            {
+                type: "berhitung",
+                question: "10 - 3 = ?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <text x="15" y="60" font-family="Outfit" font-size="30" font-weight="bold" fill="#33CC99">10 - 3 = ?</text>
+                        </svg>`,
+                options: ["5", "6", "7", "8"],
+                answer: 2,
+                color: "#33CC99" // Green
+            },
+            {
+                type: "membaca",
+                question: "Manakah kata yang benar untuk gambar ini?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <path d="M20,30 Q50,10 80,30 T90,50 Q90,80 50,90 Q10,80 10,50 Q10,40 20,30" fill="#3399FF" opacity="0.3"/>
+                          <line x1="25" y1="70" x2="25" y2="90" stroke="#3399FF" stroke-width="2"/>
+                          <line x1="40" y1="75" x2="40" y2="90" stroke="#3399FF" stroke-width="2"/>
+                          <line x1="55" y1="70" x2="55" y2="90" stroke="#3399FF" stroke-width="2"/>
+                          <line x1="70" y1="75" x2="70" y2="90" stroke="#3399FF" stroke-width="2"/>
+                        </svg>`,
+                options: ["Hujan", "Panas", "Angin", "Salju"],
+                answer: 0,
+                color: "#FF3366" // Red
+            },
+            {
+                type: "menulis",
+                question: "Manakah penulisan yang benar?",
+                options: ["Sekolah", "Skolah", "Sekola", "Sekoleh"],
+                answer: 0,
+                color: "#FFCC33" // Yellow
+            },
+            {
+                type: "berhitung",
+                question: "2 × 3 = ?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <text x="20" y="60" font-family="Outfit" font-size="30" font-weight="bold" fill="#33CC99">2 × 3 = ?</text>
+                        </svg>`,
+                options: ["5", "6", "7", "8"],
+                answer: 1,
+                color: "#33CC99" // Green
+            },
+            {
+                type: "berhitung",
+                question: "9 ÷ 3 = ?",
+                image: `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 100 100">
+                          <text x="20" y="60" font-family="Outfit" font-size="30" font-weight="bold" fill="#33CC99">9 ÷ 3 = ?</text>
+                        </svg>`,
+                options: ["2", "3", "4", "5"],
+                answer: 1,
+                color: "#33CC99" // Green
+            }
+        ];
+
+        // Game variables
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+        let gameRunning = false;
+        let gameLoop;
+
+        // Snake game variables
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        const gridWidth = canvas.width / gridSize;
+        const gridHeight = canvas.height / gridSize;
+        
+        let snake = [];
+        let direction = 'right';
+        let nextDirection = 'right';
+        let foods = [];
+        let correctFoodIndex = 0;
+        
+        const colors = {
+            red: '#FF3366',
+            yellow: '#FFCC33',
+            green: '#33CC99',
+            blue: '#3399FF',
+            snakeHead: '#333333',
+            snakeBody: '#555555',
+            background: '#f0f0f0',
+            grid: '#e0e0e0'
+        };
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionNumber = document.getElementById('question-number');
+        const scoreElement = document.getElementById('score');
+        const questionText = document.getElementById('question-text');
+        const questionImage = document.getElementById('question-image');
+        const questionType = document.getElementById('question-type');
+        const optionsContainer = document.getElementById('options-container');
+        const feedback = document.getElementById('feedback');
+        const finalScore = document.getElementById('final-score');
+        const resultMessage = document.getElementById('result-message');
+        const starsContainer = document.getElementById('stars-container');
+        const progressBar = document.getElementById('progress-bar');
+        const resultEmoji = document.getElementById('result-emoji');
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', restartGame);
+        
+        document.addEventListener('keydown', changeDirection);
+
+        // Start the game
+        function startGame() {
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            loadQuestion();
+            initSnakeGame();
+        }
+
+        // Load question
+        function loadQuestion() {
+            answered = false;
+            const question = questions[currentQuestion];
+            
+            // Update progress
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            questionNumber.textContent = currentQuestion + 1;
+            questionText.textContent = question.question;
+            
+            // Set question type
+            questionType.textContent = question.type.charAt(0).toUpperCase() + question.type.slice(1);
+            questionType.style.backgroundColor = question.color;
+            
+            // Clear previous image and add new one if exists
+            questionImage.innerHTML = '';
+            if (question.image) {
+                questionImage.innerHTML = question.image;
+            }
+            
+            // Create options
+            optionsContainer.innerHTML = '';
+            const colorOptions = [colors.red, colors.yellow, colors.green, colors.blue];
+            
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'flex items-center';
+                
+                const circle = document.createElement('div');
+                circle.className = 'option-circle';
+                circle.style.backgroundColor = colorOptions[index];
+                circle.textContent = String.fromCharCode(65 + index); // A, B, C, D
+                
+                const text = document.createElement('span');
+                text.textContent = option;
+                
+                optionDiv.appendChild(circle);
+                optionDiv.appendChild(text);
+                optionsContainer.appendChild(optionDiv);
+            });
+            
+            // Hide next button and feedback
+            nextBtn.classList.add('hidden');
+            feedback.classList.add('hidden');
+            
+            // Reset snake game for new question
+            resetSnakeGame();
+        }
+
+        // Initialize snake game
+        function initSnakeGame() {
+            // Initialize snake
+            snake = [
+                {x: 5, y: 10},
+                {x: 4, y: 10},
+                {x: 3, y: 10}
+            ];
+            
+            direction = 'right';
+            nextDirection = 'right';
+            
+            // Create foods
+            createFoods();
+            
+            // Start game loop
+            gameRunning = true;
+            clearInterval(gameLoop);
+            gameLoop = setInterval(updateGame, 150);
+        }
+        
+        // Reset snake game for new question
+        function resetSnakeGame() {
+            // Reset snake
+            snake = [
+                {x: 5, y: 10},
+                {x: 4, y: 10},
+                {x: 3, y: 10}
+            ];
+            
+            direction = 'right';
+            nextDirection = 'right';
+            
+            // Create new foods
+            createFoods();
+            
+            // Restart game loop if not running
+            if (!gameRunning) {
+                gameRunning = true;
+                clearInterval(gameLoop);
+                gameLoop = setInterval(updateGame, 150);
+            }
+        }
+        
+        // Create foods for current question
+        function createFoods() {
+            foods = [];
+            const currentQuestion = questions[currentQuestion];
+            correctFoodIndex = currentQuestion.answer;
+            
+            // Create 4 foods with different positions
+            const positions = getRandomPositions(4);
+            const colorOptions = [colors.red, colors.yellow, colors.green, colors.blue];
+            
+            for (let i = 0; i < 4; i++) {
+                foods.push({
+                    x: positions[i].x,
+                    y: positions[i].y,
+                    color: colorOptions[i],
+                    value: i
+                });
+            }
+        }
+        
+        // Get random positions for foods
+        function getRandomPositions(count) {
+            const positions = [];
+            const minDistance = 3; // Minimum distance between foods
+            
+            for (let i = 0; i < count; i++) {
+                let valid = false;
+                let pos;
+                
+                while (!valid) {
+                    pos = {
+                        x: Math.floor(Math.random() * (gridWidth - 2)) + 1,
+                        y: Math.floor(Math.random() * (gridHeight - 2)) + 1
+                    };
+                    
+                    // Check if position is not on snake
+                    let onSnake = false;
+                    for (const segment of snake) {
+                        if (segment.x === pos.x && segment.y === pos.y) {
+                            onSnake = true;
+                            break;
+                        }
+                    }
+                    
+                    // Check distance from other foods
+                    let tooClose = false;
+                    for (const existingPos of positions) {
+                        const distance = Math.sqrt(
+                            Math.pow(pos.x - existingPos.x, 2) + 
+                            Math.pow(pos.y - existingPos.y, 2)
+                        );
+                        
+                        if (distance < minDistance) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    
+                    valid = !onSnake && !tooClose;
+                }
+                
+                positions.push(pos);
+            }
+            
+            return positions;
+        }
+        
+        // Update game state
+        function updateGame() {
+            if (!gameRunning) return;
+            
+            // Move snake
+            moveSnake();
+            
+            // Check collisions
+            if (checkCollision()) {
+                gameOver();
+                return;
+            }
+            
+            // Check if snake ate food
+            checkFood();
+            
+            // Draw everything
+            drawGame();
+        }
+        
+        // Move snake
+        function moveSnake() {
+            // Update direction
+            direction = nextDirection;
+            
+            // Calculate new head position
+            const head = {x: snake[0].x, y: snake[0].y};
+            
+            switch (direction) {
+                case 'up':
+                    head.y--;
+                    break;
+                case 'down':
+                    head.y++;
+                    break;
+                case 'left':
+                    head.x--;
+                    break;
+                case 'right':
+                    head.x++;
+                    break;
+            }
+            
+            // Add new head
+            snake.unshift(head);
+            
+            // Remove tail (unless snake ate food, which is handled in checkFood)
+            snake.pop();
+        }
+        
+        // Check for collisions
+        function checkCollision() {
+            const head = snake[0];
+            
+            // Check wall collision
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+                return true;
+            }
+            
+            // Check self collision (skip head)
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Check if snake ate food
+        function checkFood() {
+            const head = snake[0];
+            
+            for (let i = 0; i < foods.length; i++) {
+                const food = foods[i];
+                
+                if (head.x === food.x && head.y === food.y) {
+                    // Remove this food
+                    foods.splice(i, 1);
+                    
+                    // Check if correct answer
+                    if (food.value === correctFoodIndex) {
+                        // Correct answer - grow snake
+                        snake.push({...snake[snake.length - 1]});
+                        snake.push({...snake[snake.length - 1]});
+                        
+                        // Update score
+                        score++;
+                        scoreElement.textContent = score;
+                        
+                        // Show feedback
+                        feedback.textContent = '✓ Benar!';
+                        feedback.className = 'rounded-xl p-3 mb-4 text-center font-medium text-white';
+                        feedback.style.backgroundColor = colors.green;
+                        feedback.classList.remove('hidden');
+                        
+                        createConfetti();
+                    } else {
+                        // Wrong answer - shrink snake (but keep at least 3 segments)
+                        if (snake.length > 3) {
+                            snake.pop();
+                        }
+                        
+                        // Show feedback
+                        feedback.textContent = '✗ Jawaban salah!';
+                        feedback.className = 'rounded-xl p-3 mb-4 text-center font-medium text-white';
+                        feedback.style.backgroundColor = colors.red;
+                        feedback.classList.remove('hidden');
+                    }
+                    
+                    // Create new foods if there are none left
+                    if (foods.length === 0) {
+                        // Show next button or end game
+                        if (currentQuestion < questions.length - 1) {
+                            nextBtn.classList.remove('hidden');
+                            gameRunning = false;
+                        } else {
+                            setTimeout(endGame, 1500);
+                        }
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        
+        // Draw game
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 0.5;
+            
+            for (let x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw snake
+            for (let i = 0; i < snake.length; i++) {
+                const segment = snake[i];
+                
+                if (i === 0) {
+                    // Head
+                    ctx.fillStyle = colors.snakeHead;
+                } else {
+                    // Body
+                    ctx.fillStyle = colors.snakeBody;
+                }
+                
+                ctx.fillRect(
+                    segment.x * gridSize + 1,
+                    segment.y * gridSize + 1,
+                    gridSize - 2,
+                    gridSize - 2
+                );
+                
+                // Draw eyes on head
+                if (i === 0) {
+                    ctx.fillStyle = 'white';
+                    
+                    // Position eyes based on direction
+                    let eyeX1, eyeY1, eyeX2, eyeY2;
+                    const eyeSize = gridSize / 5;
+                    
+                    switch (direction) {
+                        case 'up':
+                            eyeX1 = segment.x * gridSize + gridSize / 3 - eyeSize / 2;
+                            eyeY1 = segment.y * gridSize + gridSize / 3;
+                            eyeX2 = segment.x * gridSize + 2 * gridSize / 3 - eyeSize / 2;
+                            eyeY2 = segment.y * gridSize + gridSize / 3;
+                            break;
+                        case 'down':
+                            eyeX1 = segment.x * gridSize + gridSize / 3 - eyeSize / 2;
+                            eyeY1 = segment.y * gridSize + 2 * gridSize / 3 - eyeSize;
+                            eyeX2 = segment.x * gridSize + 2 * gridSize / 3 - eyeSize / 2;
+                            eyeY2 = segment.y * gridSize + 2 * gridSize / 3 - eyeSize;
+                            break;
+                        case 'left':
+                            eyeX1 = segment.x * gridSize + gridSize / 3;
+                            eyeY1 = segment.y * gridSize + gridSize / 3 - eyeSize / 2;
+                            eyeX2 = segment.x * gridSize + gridSize / 3;
+                            eyeY2 = segment.y * gridSize + 2 * gridSize / 3 - eyeSize / 2;
+                            break;
+                        case 'right':
+                            eyeX1 = segment.x * gridSize + 2 * gridSize / 3 - eyeSize;
+                            eyeY1 = segment.y * gridSize + gridSize / 3 - eyeSize / 2;
+                            eyeX2 = segment.x * gridSize + 2 * gridSize / 3 - eyeSize;
+                            eyeY2 = segment.y * gridSize + 2 * gridSize / 3 - eyeSize / 2;
+                            break;
+                    }
+                    
+                    ctx.fillRect(eyeX1, eyeY1, eyeSize, eyeSize);
+                    ctx.fillRect(eyeX2, eyeY2, eyeSize, eyeSize);
+                }
+            }
+            
+            // Draw foods
+            for (const food of foods) {
+                ctx.fillStyle = food.color;
+                ctx.beginPath();
+                ctx.arc(
+                    food.x * gridSize + gridSize / 2,
+                    food.y * gridSize + gridSize / 2,
+                    gridSize / 2 - 2,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Draw letter on food
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px Outfit';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(
+                    String.fromCharCode(65 + food.value),
+                    food.x * gridSize + gridSize / 2,
+                    food.y * gridSize + gridSize / 2
+                );
+            }
+        }
+        
+        // Change snake direction
+        function changeDirection(e) {
+            if (!gameRunning) return;
+            
+            // Prevent reversing direction
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') nextDirection = 'up';
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') nextDirection = 'down';
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') nextDirection = 'left';
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') nextDirection = 'right';
+                    e.preventDefault();
+                    break;
+            }
+        }
+        
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            
+            // Show feedback
+            feedback.textContent = 'Game Over! Ular menabrak dinding atau dirinya sendiri.';
+            feedback.className = 'rounded-xl p-3 mb-4 text-center font-medium text-white';
+            feedback.style.backgroundColor = colors.red;
+            feedback.classList.remove('hidden');
+            
+            // Show next button if not last question
+            if (currentQuestion < questions.length - 1) {
+                nextBtn.classList.remove('hidden');
+            } else {
+                setTimeout(endGame, 1500);
+            }
+        }
+
+        // Next question
+        function nextQuestion() {
+            currentQuestion++;
+            loadQuestion();
+        }
+
+        // End game
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            
+            gameScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            finalScore.textContent = `${score}/10`;
+            
+            // Set emoji based on score
+            if (score >= 8) {
+                resultEmoji.textContent = '🎉';
+            } else if (score >= 5) {
+                resultEmoji.textContent = '😊';
+            } else {
+                resultEmoji.textContent = '🌟';
+            }
+            
+            // Add stars based on score
+            starsContainer.innerHTML = '';
+            const starCount = Math.ceil(score / 2); // 1-5 stars
+            
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('div');
+                star.className = 'mx-1';
+                if (i < starCount) {
+                    star.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 20 20" fill="${colors.yellow}">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>`;
+                } else {
+                    star.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 20 20" fill="#e5e7eb">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>`;
+                }
+                starsContainer.appendChild(star);
+            }
+            
+            // Set result message
+            if (score >= 8) {
+                resultMessage.textContent = "Hebat! Kamu sangat pintar!";
+            } else if (score >= 5) {
+                resultMessage.textContent = "Bagus! Terus berlatih ya!";
+            } else {
+                resultMessage.textContent = "Jangan menyerah! Ayo coba lagi!";
+            }
+            
+            // Create confetti for celebration
+            if (score > 5) {
+                createManyConfetti();
+            }
+        }
+
+        // Restart game
+        function restartGame() {
+            currentQuestion = 0;
+            score = 0;
+            scoreElement.textContent = score;
+            progressBar.style.width = '10%';
+            
+            resultScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            
+            loadQuestion();
+            initSnakeGame();
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colorOptions = [colors.red, colors.yellow, colors.green, colors.blue];
+            
+            for (let i = 0; i < 20; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.backgroundColor = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '0';
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                document.body.appendChild(confetti);
+                
+                // Animate confetti
+                const animation = confetti.animate([
+                    { top: '0', opacity: 1 },
+                    { top: '100vh', opacity: 0 }
+                ], {
+                    duration: 1500 + Math.random() * 1000,
+                    easing: 'cubic-bezier(0.37, 0, 0.63, 1)'
+                });
+                
+                animation.onfinish = () => {
+                    confetti.remove();
+                };
+            }
+        }
+
+        // Create many confetti for end celebration
+        function createManyConfetti() {
+            const colorOptions = [colors.red, colors.yellow, colors.green, colors.blue];
+            const shapes = ['square', 'circle'];
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    
+                    const color = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+                    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    
+                    confetti.style.backgroundColor = color;
+                    if (shape === 'circle') {
+                        confetti.style.borderRadius = '50%';
+                    }
+                    
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.top = '0';
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    document.body.appendChild(confetti);
+                    
+                    // Animate confetti
+                    const animation = confetti.animate([
+                        { top: '0', opacity: 1 },
+                        { top: '100vh', opacity: 0 }
+                    ], {
+                        duration: 2000 + Math.random() * 1000,
+                        easing: 'cubic-bezier(0.37, 0, 0.63, 1)'
+                    });
+                    
+                    animation.onfinish = () => {
+                        confetti.remove();
+                    };
+                }, i * 50);
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9664f475846ff886',t:'MTc1MzcxMTc3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
