@@ -144,7 +144,8 @@
                     <p>Gunakan tombol panah untuk mengontrol ular</p>
                     <p>Benar: +10 HP & -10 HP untuk lawan</p>
                     <p>Salah: -10 HP & +10 HP untuk lawan</p>
-                    <p>Menabrak ular lawan = kalah!</p>
+                    <p>Nabrak diri sendiri = tembus!</p>
+                    <p>Nabrak ular lawan = kalah!</p>
                 </div>
             </div>
         </div>
@@ -562,13 +563,8 @@
                 if (head.y < 0) head.y = GRID_SIZE - 1;
                 if (head.y >= GRID_SIZE) head.y = 0;
                 
-                // Check collision with self
-                for (let i = 0; i < playerSnake.length; i++) {
-                    if (playerSnake[i].x === head.x && playerSnake[i].y === head.y) {
-                        gameOver("Kamu menabrak diri sendiri!");
-                        return;
-                    }
-                }
+                // Self-collision is now allowed - snake can pass through itself
+                // No collision check with own snake needed
                 
                 // Check collision with AI snake
                 for (let i = 0; i < aiSnake.length; i++) {
@@ -699,13 +695,8 @@
                 if (head.y < 0) head.y = GRID_SIZE - 1;
                 if (head.y >= GRID_SIZE) head.y = 0;
                 
-                // Check collision with self
-                for (let i = 0; i < aiSnake.length; i++) {
-                    if (aiSnake[i].x === head.x && aiSnake[i].y === head.y) {
-                        gameOver("AI menabrak dirinya sendiri! Kamu menang!", true);
-                        return;
-                    }
-                }
+                // Self-collision is now allowed - AI snake can pass through itself
+                // No collision check with own snake needed
                 
                 // Check collision with player snake
                 for (let i = 0; i < playerSnake.length; i++) {
@@ -790,96 +781,18 @@
                 }
             }
             
-            // Calculate direction to avoid player
+            // Calculate direction to avoid player with advanced pathfinding
             function calculateAvoidanceDirection(aiHead, playerHead, currentDirection) {
-                // Create a grid to represent the game state
-                const grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
-                
-                // Mark player snake positions as obstacles (value 1)
-                for (const segment of playerSnake) {
-                    grid[segment.y][segment.x] = 1;
-                }
-                
-                // Mark AI snake positions as obstacles (value 1), except the tail which will move
-                for (let i = 0; i < aiSnake.length - 1; i++) {
-                    grid[aiSnake[i].y][aiSnake[i].x] = 1;
-                }
-                
-                // Define possible directions
-                const directions = ['up', 'right', 'down', 'left'];
-                const oppositeDirections = {
-                    'up': 'down',
-                    'down': 'up',
-                    'left': 'right',
-                    'right': 'left'
-                };
-                
-                // Calculate direction to player
-                const dx = playerHead.x - aiHead.x;
-                const dy = playerHead.y - aiHead.y;
-                
-                // Adjust for wrap-around
-                const wrappedDx = Math.abs(dx) > GRID_SIZE / 2 ? 
-                    (dx > 0 ? dx - GRID_SIZE : dx + GRID_SIZE) : dx;
-                const wrappedDy = Math.abs(dy) > GRID_SIZE / 2 ? 
-                    (dy > 0 ? dy - GRID_SIZE : dy + GRID_SIZE) : dy;
-                
-                // Determine directions to avoid (opposite of direction to player)
-                let avoidDirections = [];
-                
-                if (Math.abs(wrappedDx) > Math.abs(wrappedDy)) {
-                    // Player is more horizontal from AI
-                    if (wrappedDx > 0) avoidDirections.push('right'); // Avoid going right if player is to the right
-                    else avoidDirections.push('left'); // Avoid going left if player is to the left
-                } else {
-                    // Player is more vertical from AI
-                    if (wrappedDy > 0) avoidDirections.push('down'); // Avoid going down if player is below
-                    else avoidDirections.push('up'); // Avoid going up if player is above
-                }
-                
-                // Prioritize directions that are perpendicular to player direction
-                let prioritizedDirections = directions.filter(dir => !avoidDirections.includes(dir));
-                
-                // Remove opposite direction (can't go backwards)
-                prioritizedDirections = prioritizedDirections.filter(dir => dir !== oppositeDirections[currentDirection]);
-                
-                // Add avoid directions at the end (least priority)
-                for (const dir of avoidDirections) {
-                    if (dir !== oppositeDirections[currentDirection]) {
-                        prioritizedDirections.push(dir);
-                    }
-                }
-                
-                // Try each direction in priority order
-                for (const dir of prioritizedDirections) {
-                    let nextX = aiHead.x;
-                    let nextY = aiHead.y;
-                    
-                    switch (dir) {
-                        case 'up': nextY--; break;
-                        case 'down': nextY++; break;
-                        case 'left': nextX--; break;
-                        case 'right': nextX++; break;
-                    }
-                    
-                    // Wrap around walls
-                    if (nextX < 0) nextX = GRID_SIZE - 1;
-                    if (nextX >= GRID_SIZE) nextX = 0;
-                    if (nextY < 0) nextY = GRID_SIZE - 1;
-                    if (nextY >= GRID_SIZE) nextY = 0;
-                    
-                    // Check if this direction is safe (no collision)
-                    if (grid[nextY][nextX] === 0) {
-                        return dir;
-                    }
-                }
-                
-                // If no safe direction found, just continue in current direction
-                return currentDirection;
+                return calculateSmartDirection(aiHead, null, currentDirection, true);
             }
             
-            // Calculate next direction for AI to reach target food
+            // Calculate next direction for AI to reach target food with smart pathfinding
             function calculateNextDirection(aiHead, targetFood, currentDirection) {
+                return calculateSmartDirection(aiHead, targetFood, currentDirection, false);
+            }
+            
+            // Advanced AI pathfinding that prevents self-collision
+            function calculateSmartDirection(aiHead, targetFood, currentDirection, avoidanceMode) {
                 // Create a grid to represent the game state
                 const grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
                 
@@ -906,16 +819,16 @@
                             if (dangerY < 0) dangerY = GRID_SIZE - 1;
                             if (dangerY >= GRID_SIZE) dangerY = 0;
                             
-                            // Mark as danger zone (2)
-                            grid[dangerY][dangerX] = 2;
+                            // Mark as danger zone (2) only if not already occupied
+                            if (grid[dangerY][dangerX] === 0) {
+                                grid[dangerY][dangerX] = 2;
+                            }
                         }
                     }
                 }
                 
-                // Mark AI snake positions as obstacles (value 1), except the tail which will move
-                for (let i = 0; i < aiSnake.length - 1; i++) {
-                    grid[aiSnake[i].y][aiSnake[i].x] = 1;
-                }
+                // AI snake can now pass through itself, so don't mark own positions as obstacles
+                // Only mark player snake as obstacles
                 
                 // Define possible directions
                 const directions = ['up', 'right', 'down', 'left'];
@@ -926,54 +839,176 @@
                     'right': 'left'
                 };
                 
-                // Calculate horizontal and vertical distance
-                const dx = targetFood.x - aiHead.x;
-                const dy = targetFood.y - aiHead.y;
-                
-                // Adjust for wrap-around
-                const wrappedDx = Math.abs(dx) > GRID_SIZE / 2 ? 
-                    (dx > 0 ? dx - GRID_SIZE : dx + GRID_SIZE) : dx;
-                const wrappedDy = Math.abs(dy) > GRID_SIZE / 2 ? 
-                    (dy > 0 ? dy - GRID_SIZE : dy + GRID_SIZE) : dy;
-                
-                // Prioritize directions based on distance to target
-                let prioritizedDirections = [];
-                
-                if (Math.abs(wrappedDx) > Math.abs(wrappedDy)) {
-                    // Prioritize horizontal movement
-                    if (wrappedDx > 0) prioritizedDirections.push('right');
-                    else if (wrappedDx < 0) prioritizedDirections.push('left');
+                // Function to check if a direction leads to a dead end
+                function isDeadEnd(startX, startY, direction, depth = 3) {
+                    if (depth <= 0) return false;
                     
-                    if (wrappedDy > 0) prioritizedDirections.push('down');
-                    else if (wrappedDy < 0) prioritizedDirections.push('up');
-                    else {
-                        prioritizedDirections.push('down');
-                        prioritizedDirections.push('up');
-                    }
-                } else {
-                    // Prioritize vertical movement
-                    if (wrappedDy > 0) prioritizedDirections.push('down');
-                    else if (wrappedDy < 0) prioritizedDirections.push('up');
+                    let nextX = startX;
+                    let nextY = startY;
                     
-                    if (wrappedDx > 0) prioritizedDirections.push('right');
-                    else if (wrappedDx < 0) prioritizedDirections.push('left');
-                    else {
-                        prioritizedDirections.push('right');
-                        prioritizedDirections.push('left');
+                    switch (direction) {
+                        case 'up': nextY--; break;
+                        case 'down': nextY++; break;
+                        case 'left': nextX--; break;
+                        case 'right': nextX++; break;
                     }
+                    
+                    // Wrap around walls
+                    if (nextX < 0) nextX = GRID_SIZE - 1;
+                    if (nextX >= GRID_SIZE) nextX = 0;
+                    if (nextY < 0) nextY = GRID_SIZE - 1;
+                    if (nextY >= GRID_SIZE) nextY = 0;
+                    
+                    // If this position is blocked, it's a dead end
+                    if (grid[nextY][nextX] === 1) return true;
+                    
+                    // Check if we have at least one safe direction from this position
+                    let safeDirections = 0;
+                    for (const dir of directions) {
+                        if (dir === oppositeDirections[direction]) continue; // Can't go back
+                        
+                        let checkX = nextX;
+                        let checkY = nextY;
+                        
+                        switch (dir) {
+                            case 'up': checkY--; break;
+                            case 'down': checkY++; break;
+                            case 'left': checkX--; break;
+                            case 'right': checkX++; break;
+                        }
+                        
+                        // Wrap around walls
+                        if (checkX < 0) checkX = GRID_SIZE - 1;
+                        if (checkX >= GRID_SIZE) checkX = 0;
+                        if (checkY < 0) checkY = GRID_SIZE - 1;
+                        if (checkY >= GRID_SIZE) checkY = 0;
+                        
+                        // If this direction is safe or just a danger zone, count it
+                        if (grid[checkY][checkX] !== 1) {
+                            safeDirections++;
+                        }
+                    }
+                    
+                    // If we have no safe directions, it's a dead end
+                    if (safeDirections === 0) return true;
+                    
+                    // Recursively check if this leads to a dead end
+                    if (safeDirections === 1) {
+                        for (const dir of directions) {
+                            if (dir === oppositeDirections[direction]) continue;
+                            
+                            let checkX = nextX;
+                            let checkY = nextY;
+                            
+                            switch (dir) {
+                                case 'up': checkY--; break;
+                                case 'down': checkY++; break;
+                                case 'left': checkX--; break;
+                                case 'right': checkX++; break;
+                            }
+                            
+                            // Wrap around walls
+                            if (checkX < 0) checkX = GRID_SIZE - 1;
+                            if (checkX >= GRID_SIZE) checkX = 0;
+                            if (checkY < 0) checkY = GRID_SIZE - 1;
+                            if (checkY >= GRID_SIZE) checkY = 0;
+                            
+                            if (grid[checkY][checkX] !== 1) {
+                                return isDeadEnd(nextX, nextY, dir, depth - 1);
+                            }
+                        }
+                    }
+                    
+                    return false;
                 }
                 
-                // Add remaining directions
-                for (const dir of directions) {
-                    if (!prioritizedDirections.includes(dir)) {
-                        prioritizedDirections.push(dir);
+                // Prioritize directions based on target or avoidance
+                let prioritizedDirections = [];
+                
+                if (avoidanceMode) {
+                    // In avoidance mode, prioritize directions away from player
+                    const playerHead = playerSnake[0];
+                    const dx = playerHead.x - aiHead.x;
+                    const dy = playerHead.y - aiHead.y;
+                    
+                    // Adjust for wrap-around
+                    const wrappedDx = Math.abs(dx) > GRID_SIZE / 2 ? 
+                        (dx > 0 ? dx - GRID_SIZE : dx + GRID_SIZE) : dx;
+                    const wrappedDy = Math.abs(dy) > GRID_SIZE / 2 ? 
+                        (dy > 0 ? dy - GRID_SIZE : dy + GRID_SIZE) : dy;
+                    
+                    // Prioritize directions away from player
+                    if (Math.abs(wrappedDx) > Math.abs(wrappedDy)) {
+                        if (wrappedDx > 0) prioritizedDirections.push('left');
+                        else prioritizedDirections.push('right');
+                        
+                        if (wrappedDy > 0) prioritizedDirections.push('up');
+                        else prioritizedDirections.push('down');
+                    } else {
+                        if (wrappedDy > 0) prioritizedDirections.push('up');
+                        else prioritizedDirections.push('down');
+                        
+                        if (wrappedDx > 0) prioritizedDirections.push('left');
+                        else prioritizedDirections.push('right');
                     }
+                    
+                    // Add remaining directions
+                    for (const dir of directions) {
+                        if (!prioritizedDirections.includes(dir)) {
+                            prioritizedDirections.push(dir);
+                        }
+                    }
+                } else if (targetFood) {
+                    // Calculate horizontal and vertical distance to target
+                    const dx = targetFood.x - aiHead.x;
+                    const dy = targetFood.y - aiHead.y;
+                    
+                    // Adjust for wrap-around
+                    const wrappedDx = Math.abs(dx) > GRID_SIZE / 2 ? 
+                        (dx > 0 ? dx - GRID_SIZE : dx + GRID_SIZE) : dx;
+                    const wrappedDy = Math.abs(dy) > GRID_SIZE / 2 ? 
+                        (dy > 0 ? dy - GRID_SIZE : dy + GRID_SIZE) : dy;
+                    
+                    // Prioritize directions based on distance to target
+                    if (Math.abs(wrappedDx) > Math.abs(wrappedDy)) {
+                        // Prioritize horizontal movement
+                        if (wrappedDx > 0) prioritizedDirections.push('right');
+                        else if (wrappedDx < 0) prioritizedDirections.push('left');
+                        
+                        if (wrappedDy > 0) prioritizedDirections.push('down');
+                        else if (wrappedDy < 0) prioritizedDirections.push('up');
+                        else {
+                            prioritizedDirections.push('down');
+                            prioritizedDirections.push('up');
+                        }
+                    } else {
+                        // Prioritize vertical movement
+                        if (wrappedDy > 0) prioritizedDirections.push('down');
+                        else if (wrappedDy < 0) prioritizedDirections.push('up');
+                        
+                        if (wrappedDx > 0) prioritizedDirections.push('right');
+                        else if (wrappedDx < 0) prioritizedDirections.push('left');
+                        else {
+                            prioritizedDirections.push('right');
+                            prioritizedDirections.push('left');
+                        }
+                    }
+                    
+                    // Add remaining directions
+                    for (const dir of directions) {
+                        if (!prioritizedDirections.includes(dir)) {
+                            prioritizedDirections.push(dir);
+                        }
+                    }
+                } else {
+                    // No specific target, just use all directions
+                    prioritizedDirections = [...directions];
                 }
                 
                 // Remove opposite direction (can't go backwards)
                 prioritizedDirections = prioritizedDirections.filter(dir => dir !== oppositeDirections[currentDirection]);
                 
-                // First, try to find a safe direction that avoids both obstacles and danger zones
+                // First pass: Find completely safe directions that don't lead to dead ends
                 for (const dir of prioritizedDirections) {
                     let nextX = aiHead.x;
                     let nextY = aiHead.y;
@@ -991,13 +1026,13 @@
                     if (nextY < 0) nextY = GRID_SIZE - 1;
                     if (nextY >= GRID_SIZE) nextY = 0;
                     
-                    // Check if this direction is completely safe (no collision or danger)
-                    if (grid[nextY][nextX] === 0) {
+                    // Check if this direction is completely safe and doesn't lead to dead end
+                    if (grid[nextY][nextX] === 0 && !isDeadEnd(aiHead.x, aiHead.y, dir)) {
                         return dir;
                     }
                 }
                 
-                // If no completely safe direction, accept danger zones but avoid obstacles
+                // Second pass: Accept danger zones but avoid obstacles and dead ends
                 for (const dir of prioritizedDirections) {
                     let nextX = aiHead.x;
                     let nextY = aiHead.y;
@@ -1015,13 +1050,37 @@
                     if (nextY < 0) nextY = GRID_SIZE - 1;
                     if (nextY >= GRID_SIZE) nextY = 0;
                     
-                    // Accept danger zones (2) but avoid obstacles (1)
+                    // Accept danger zones (2) but avoid obstacles (1) and dead ends
+                    if (grid[nextY][nextX] !== 1 && !isDeadEnd(aiHead.x, aiHead.y, dir)) {
+                        return dir;
+                    }
+                }
+                
+                // Third pass: Just avoid immediate obstacles (emergency mode)
+                for (const dir of prioritizedDirections) {
+                    let nextX = aiHead.x;
+                    let nextY = aiHead.y;
+                    
+                    switch (dir) {
+                        case 'up': nextY--; break;
+                        case 'down': nextY++; break;
+                        case 'left': nextX--; break;
+                        case 'right': nextX++; break;
+                    }
+                    
+                    // Wrap around walls
+                    if (nextX < 0) nextX = GRID_SIZE - 1;
+                    if (nextX >= GRID_SIZE) nextX = 0;
+                    if (nextY < 0) nextY = GRID_SIZE - 1;
+                    if (nextY >= GRID_SIZE) nextY = 0;
+                    
+                    // Just avoid immediate obstacles
                     if (grid[nextY][nextX] !== 1) {
                         return dir;
                     }
                 }
                 
-                // If all else fails, continue in current direction
+                // If all else fails, continue in current direction (should rarely happen now)
                 return currentDirection;
             }
             
@@ -1377,5 +1436,5 @@
             initGame();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96685ed8d025fd70',t:'MTc1Mzc0NzU4OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'966916f9c52e8237',t:'MTc1Mzc1NTEzMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
