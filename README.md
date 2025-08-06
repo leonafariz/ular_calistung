@@ -1,4 +1,6 @@
-# 🐍 Game Ular Calistung
+# BACA PENTING!!!
+
+## 🐍 Game Ular Calistung
 
 **Dibuat 100% dengan AI Code Generator [www.agencyai.id](https://www.agencyai.id) hanya dalam < 1 menit.**
 
@@ -53,9 +55,9 @@ Game edukasi **Calistung (Baca-Tulis-Hitung)** berbasis web yang menggabungkan m
 
 ## 🔗 Sosial Media
 
-**Follow dan DM untuk kolaborasi atau peluang kerja!**
+**Btw i'm entrepreneur, maybe we can collab or you need a job haha so follow my sosmed**
 
-- [Instagram](https://www.instagram.com/leonafa.rizz)
+- [Instagram](https://www.instagram.com/leonafariz.ai)
 - [LinkedIn](https://www.linkedin.com/in/leona-fariz-pratama)
 - [YouTube](https://www.youtube.com/@leonafariz)
 - [TikTok](https://www.tiktok.com/@leonafariz.ai)
@@ -67,7 +69,9 @@ Game edukasi **Calistung (Baca-Tulis-Hitung)** berbasis web yang menggabungkan m
 
 ---
 
-# 🐍 Calistung Snake Game
+# ENGLISH
+
+## 🐍 Calistung Snake Game
 
 **Built 100% with AI Code Generator [www.agencyai.id](https://www.agencyai.id) in under 1 minute.**
 
