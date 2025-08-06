@@ -1,4 +1,4 @@
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/0efe2b2e-d64d-44d4-b6b3-361c1d4c9124" /># BACA PENTING!!!
+# BACA PENTING!!!
 
 ## 🐍 Game Ular Calistung
 
