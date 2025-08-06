@@ -1,4 +1,4 @@
-# BACA PENTING!!!
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/0efe2b2e-d64d-44d4-b6b3-361c1d4c9124" /># BACA PENTING!!!
 
 ## 🐍 Game Ular Calistung
 
@@ -42,7 +42,7 @@ Game edukasi **Calistung (Baca-Tulis-Hitung)** berbasis web yang menggabungkan m
 
 ## 📸 Preview
 
-*Tambahkan screenshot atau GIF gameplay di sini jika ada.*
+![Gameplay](preview.png)
 
 ---
 
@@ -111,12 +111,6 @@ A web-based **Calistung (Reading-Writing-Counting)** educational game combined w
 
 ---
 
-## 📸 Preview
-
-*Add screenshots or gameplay GIFs here if available.*
-
----
-
 ## 🙌 Credit
 
 - **Creator & Entrepreneur:** [Leona Fariz Pratama](https://www.github.com/leonafariz)  
@@ -126,16 +120,12 @@ A web-based **Calistung (Reading-Writing-Counting)** educational game combined w
 
 ## 🔗 Social Media
 
-**Follow & DM me for collaborations or job opportunities!**
+**Btw i'm entrepreneur, maybe we can collab or you need a job haha so follow my sosmed**
 
-- [Instagram](https://www.instagram.com/leonafa.rizz)
+- [Instagram](https://www.instagram.com/leonafariz.ai)
 - [LinkedIn](https://www.linkedin.com/in/leona-fariz-pratama)
 - [YouTube](https://www.youtube.com/@leonafariz)
 - [TikTok](https://www.tiktok.com/@leonafariz.ai)
 - [X / Twitter](https://www.x.com/leonafariz)
 - [Threads](https://www.threads.com/@leonafa.rizz)
 - [GitHub](https://www.github.com/leonafariz)
-
----
-
-🔥 *I'm an entrepreneur, maybe we can collab or if you need a job 😉*
